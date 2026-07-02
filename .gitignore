@@ -1,0 +1,16 @@
+# Large model binaries
+*.h5
+*.pkl
+
+# Datasets and large data files
+vision_dataset/
+*.csv
+*.xlsx
+
+# Security credentials
+.env
+
+# Python clutter and temporary files
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
