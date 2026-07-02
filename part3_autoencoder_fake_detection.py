@@ -1,6 +1,5 @@
 # ============================================================
 # PART 3 — FAKE POST DETECTION USING AUTOENCODER
-# Covers: Unit II & V (Autoencoders), Lab 7, Lab 8
 # ============================================================
 
 # ── STEP 1: Import Libraries ─────────────────────────────────
@@ -108,15 +107,34 @@ print(f"\nDetection Threshold: {threshold:.2f}")
 
 def detect_fake(text):
     """Returns True if the post is likely fake/spam."""
+    # 1. Standard encoding
     enc_input = encode([text])
     enc_target = enc_input.reshape(-1, MAX_LEN, 1)
     
+    # 2. Check for the OOV Paradox (Unknown words)
+    seq = tokenizer.texts_to_sequences([text])[0]
+    total_words = len(seq)
+    oov_count = seq.count(1) # In Keras, 1 is the <OOV> token
+    oov_ratio = oov_count / total_words if total_words > 0 else 0
+    
+    # 3. Calculate structural error
     err = reconstruction_error(enc_input, enc_target)
-    is_fake = err[0] > threshold
-    label = "FAKE/SPAM" if is_fake else "Normal"
+    
+    # 4. Hybrid Detection
+    is_fake = bool(err[0] > threshold or oov_ratio > 0.3)
+    
+    if oov_ratio > 0.3:
+        label = "FAKE/SPAM (High Unknown Vocabulary)"
+    elif err[0] > threshold:
+        label = "FAKE/SPAM (Anomalous Structure)"
+    else:
+        label = "Normal"
+        
     print(f"\nPost    : '{text[:60]}...' " if len(text) > 60 else f"\nPost    : '{text}'")
     print(f"Error   : {err[0]:.2f}  (threshold: {threshold:.2f})")
+    print(f"OOV %   : {oov_ratio*100:.1f}%")
     print(f"Result  : {label}")
+    
     return is_fake
 
 # Test the detector
@@ -172,7 +190,8 @@ normal_scaled = scaler.fit_transform(normal_data)
 fake_scaled   = scaler.transform(fake_data)
 
 feat_autoencoder = Sequential([
-    Dense(8,  activation='relu', input_shape=(5,)),   
+    Input(shape=(5,)),                           # <-- New standard way to define input
+    Dense(8,  activation='relu'),   
     Dense(4,  activation='relu'),                      
     Dense(8,  activation='relu'),                      
     Dense(5,  activation='sigmoid')                    
@@ -210,5 +229,9 @@ with open('autoencoder_tokenizer.pkl', 'wb') as f:
 with open('engagement_scaler.pkl', 'wb') as f:
     pickle.dump(scaler, f)
     
+# NEW: Save the dynamically calculated threshold for the API
+with open('threshold.pkl', 'wb') as f:
+    pickle.dump(threshold, f)
+    
 print("\n✅ Saved: text_autoencoder.h5, engagement_autoencoder.h5")
-print("✅ Saved: autoencoder_tokenizer.pkl & engagement_scaler.pkl")
+print("✅ Saved: autoencoder_tokenizer.pkl, engagement_scaler.pkl, & threshold.pkl")
