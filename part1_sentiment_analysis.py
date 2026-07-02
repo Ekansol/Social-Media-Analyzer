@@ -1,6 +1,5 @@
 # ============================================================
 # PART 1 — SENTIMENT ANALYSIS USING BiLSTM (RNN)
-# Covers: Unit IV (RNN/LSTM), Lab 5, Lab 9
 # ============================================================
 
 # ── STEP 1: Install & Import Libraries ──────────────────────
