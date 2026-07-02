@@ -26,8 +26,14 @@ try:
         
     # 2. Fake Text Detection (Autoencoder)
     fake_text_model = load_model(os.path.join(MODEL_DIR, 'text_autoencoder.h5'), compile=False)
+    
+    # LOAD TOKENIZER (This was missing!)
     with open(os.path.join(MODEL_DIR, 'autoencoder_tokenizer.pkl'), 'rb') as f:
         fake_text_tokenizer = pickle.load(f)
+        
+    # LOAD DYNAMIC THRESHOLD
+    with open(os.path.join(MODEL_DIR, 'threshold.pkl'), 'rb') as f:
+        FAKE_TEXT_THRESHOLD = pickle.load(f)
 
     # 3. Deepfake Forensics (ResNet50)
     forensics_model = load_model(os.path.join(MODEL_DIR, 'forensics_resnet50.h5'), compile=False)
@@ -68,24 +74,40 @@ def detect_fake_post(request: PostRequest):
     try:
         MAX_LEN = 20
         
-        # Raw tokenization for the Embedding layer (NO scaling hack)
+        # 1. Tokenize the input
         seq = fake_text_tokenizer.texts_to_sequences([request.text])
-        pad = pad_sequences(seq, maxlen=MAX_LEN, padding='post')
         
-        # The AI predicts the raw tokens, so we compare against reshaped targets
+        # 2. Check for OOV (Out-Of-Vocabulary) Anomaly
+        # In Keras, the <OOV> token is always integer 1.
+        total_words = len(seq[0])
+        oov_count = seq[0].count(1)
+        oov_ratio = oov_count / total_words if total_words > 0 else 0
+        
+        # 3. Calculate Autoencoder Reconstruction Error
+        pad = pad_sequences(seq, maxlen=MAX_LEN, padding='post')
         enc_target = pad.reshape(-1, MAX_LEN, 1)
         pred = fake_text_model.predict(pad, verbose=0)
         
-        error = np.mean(np.power(enc_target - pred, 2))
+        error = float(np.mean(np.power(enc_target - pred, 2)))
         
-        THRESHOLD = 348520.81  
-        is_fake = bool(error > THRESHOLD)
+        # 4. HYBRID DETECTION LOGIC
+        # It is fake IF the reconstruction error is too high OR if too many words are unknown (>30%)
+        is_fake = bool(error > FAKE_TEXT_THRESHOLD or oov_ratio > 0.3)
         
+        # Determine the exact reason for the UI
+        if oov_ratio > 0.3:
+            status_message = "FAKE/SPAM (High Unknown Vocabulary)"
+        elif error > FAKE_TEXT_THRESHOLD:
+            status_message = "FAKE/SPAM (Anomalous Structure)"
+        else:
+            status_message = "NORMAL"
+
         return {
             "text": request.text,
-            "reconstruction_error": float(error),
+            "reconstruction_error": error,
+            "oov_ratio": round(oov_ratio * 100, 2), # Send as percentage
             "is_fake": is_fake,
-            "status": "FAKE/SPAM" if is_fake else "NORMAL"
+            "status": status_message
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
