@@ -26,21 +26,20 @@ A deep-learning-powered platform for real-time social media forensics, integrati
 
 ## Launch Sequence
 1. **API Backend:**
+   ```bash
     uvicorn app:app --reload
 
 2. **Web UI:**
+   ```bash
     streamlit run frontend.py
 
 ## AI Model Specifications
 
 **Sentiment Analysis (BiLSTM):**
-
     Utilizes a Bidirectional LSTM layer to process text sequences in both forward and backward directions, ensuring high contextual awareness of emotional markers.
 
 **Spam Detection (LSTM Autoencoder):**
-
     Operates as an anomaly detection system. By compressing and reconstructing input tokens, the model calculates the Mean Squared Error (MSE); inputs exceeding the defined threshold are flagged as anomalous.
 
 **Media Forensics (ResNet50):**
-
     Employs a pre-trained ResNet50 backbone to extract deep feature maps, which are classified to distinguish between authentic photography and synthetic AI-generated artifacts.
