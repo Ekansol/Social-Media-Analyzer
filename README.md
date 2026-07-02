@@ -47,7 +47,7 @@ A deep-learning-powered platform for real-time social media forensics, integrati
 
 This project utilizes publicly available datasets for training and validation:
 
-   Sentiment Analysis Dataset: https://www.kaggle.com/datasets/kazanova/sentiment140
-   Image Classification: https://www.kaggle.com/datasets/rhythmghai/ai-vs-real-images-dataset
-   Abusive Content Detection: https://www.kaggle.com/datasets/parthplc/facebook-hateful-meme-dataset
-   Spam Detection: https://www.kaggle.com/datasets/uciml/sms-spam-collection-dataset
+   Sentiment Analysis Dataset: https://www.kaggle.com/datasets/kazanova/sentiment140 .
+   Image Classification: https://www.kaggle.com/datasets/rhythmghai/ai-vs-real-images-dataset .
+   Abusive Content Detection: https://www.kaggle.com/datasets/parthplc/facebook-hateful-meme-dataset .
+   Spam Detection: https://www.kaggle.com/datasets/uciml/sms-spam-collection-dataset .
